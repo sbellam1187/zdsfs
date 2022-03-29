@@ -1,0 +1,11 @@
+apiVersion: runway.aa.com/v1alpha1
+kind: WebApp
+metadata:
+  name: zdsfs-nonprod
+  annotations:
+    backstageName: zdsfs
+spec:
+  containerName: packages.aa.com/docker-dev/
+  containerTag: ''
+  port: 80
+  

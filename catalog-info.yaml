@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: 'zdsfs'
+  description: 'sdf'
+  annotations:
+    github.com/project-slug: 'AAInternal/zdsfs'
+    argocd/app-selector: 'backstage-name=zdsfs'
+    backstage.io/kubernetes-label-selector: 'backstage.io/kubernetes-id=zdsfs'
+  tags:
+    - react
+    - node
+spec:
+  type: website
+  lifecycle: experimental
+  owner: 'tempValueOwner'

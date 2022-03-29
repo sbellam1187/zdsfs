@@ -1,0 +1,35 @@
+name: Run coverity create and scan
+on:
+  create:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+    branches: [ main ]
+jobs:
+  build_publish:
+    runs-on: coverity
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: AAInternal/coverity-action
+          ref: main
+          token: ${{  secrets.AAINTERNAL_READONLY_PAT }}
+          path: ./.github/actions/coverity-action
+      - name: Performing Analysis
+        uses: ./.github/actions/coverity-action
+        with:
+          shortname: "MoPro1"
+          squadname: "[object Object]"
+          stream: zdsfs
+          languages: javascript
+          username: ${{  secrets.COVERITY_USR  }}
+          password: ${{  secrets.COVERITY_PWD  }}
+          break_status: 
+        env:
+          ELK_GHEC_TOKEN: ${{ secrets.AAINTERNAL_READONLY_PAT  }}
+          SQUAD360USERNAME: ${{ secrets.SQUAD360USERNAME }}
+          SQUAD360PASSWORD: ${{ secrets.SQUAD360PASSWORD }}
+          e_password: ${{  secrets.COVERITY_PWD  }}

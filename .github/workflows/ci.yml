@@ -1,0 +1,90 @@
+name: ReactApp CI
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  NPM_REGISTRY: https://packages.aa.com/artifactory/api/npm/npm-public/
+  JFROG_URL: https://packages.aa.com/artifactory
+  APPLICATION_NAME: 'zdsfs'
+  APPLICATION_VERSION: "${{ github.event_name == 'workflow_dispatch' && '' || github.event.release.tag_name }}"
+
+jobs:
+
+  build_publish:
+
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Check out AA sonarscan action
+        uses: actions/checkout@v2
+        with:
+          repository: AAInternal/sonarscan          
+          ref: refs/heads/master
+          token: ${{ secrets.AAINTERNAL_READONLY_PAT }}
+          path: ./.github/actions/sonarscan
+
+      - name: JFrog CLI download
+        uses: jfrog/setup-jfrog-cli@v1
+        with:
+          version: 1.40.0
+      - run: |
+          jfrog --version
+
+      - name: Use node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+          always-auth: true
+          registry-url: ${{ env.NPM_REGISTRY }}
+
+      - name: yarn install
+        run: yarn install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.ARTIFACTORY_CRED_PAT }}
+
+      - run: yarn build
+
+      - run: yarn test
+
+      # Disabled until there is a org wide sonar token
+      # - name: Run sonar scan
+      #   if: ${{ github.event_name != 'pull_request' }}
+      #   id: sonarscan
+      #   uses: ./.github/actions/sonarscan
+      #   env:
+      #     DEPLOYMENT_ID: zdsfs
+      #     GITHUB_TOKEN: ${{ secrets.AAINTERNAL_READONLY_PAT }}
+      #     SONARSCAN_EVENT_OBSERVE_ACCESS:  ${{ secrets.SONARSCAN_EVENT_OBSERVE_ACCESS }}
+      #   with:
+      #     sonarqube_token: ${{ secrets.SONARQUBE_TOKEN }}
+      #     projectKey: zdsfs
+      #    # sources: "./"
+      #    # projectBaseDir: "./" #optional
+
+      - name: checkout action
+        uses: actions/checkout@v2
+        with:
+          repository: AAInternal/eDots_action_docker_build
+          ref: v1.3.0
+          token: ${{ secrets.AAINTERNAL_READONLY_PAT }}
+          path: ./.github/actions/docker_build
+
+      - name: Build and Push Docker Image to JFrog Artifactory
+        uses: ./.github/actions/docker_build
+        with:
+          APPLICATION_NAME: 
+          APPLICATION_VERSION: ${{ env.APPLICATION_VERSION }}
+          ARTIFACTORY_ID_USR: ${{ secrets.ARTIFACTORY_CRED_USR }}
+          ARTIFACTORY_ACCESS_TOKEN: ${{ secrets.ARTIFACTORY_CRED_PAT }}
+          BASE_FOLDER: .
+          JFROG_CLI_VERSION: '1.35.5'
